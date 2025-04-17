@@ -101,7 +101,8 @@ args = parser.parse_args()
 
 dataset_name = args.dataset_name
 assert dataset_name is not None, "Dataset name is not set"
-ds = datasets.load_dataset(dataset_name, split='train')
+ds = datasets.load_from_disk(dataset_name)
+# ds = datasets.load_from_disk(dataset_name, split='train')
 
 # Apply the mapping functions
 ds = ds.map(map_fn_backtrack, batched=True, remove_columns=ds.column_names, num_proc=64)
@@ -109,7 +110,7 @@ ds = ds.map(map_fn_backchain, batched=True, remove_columns=ds.column_names, num_
 ds = ds.map(map_fn_verification, batched=True, remove_columns=ds.column_names, num_proc=64)
 ds = ds.map(map_fn_subgoal, batched=True, remove_columns=ds.column_names, num_proc=64)
 
-ds.push_to_hub(dataset_name+'_processed')
+ds.save_to_disk(dataset_name+'_processed')
 
 
 

@@ -38,11 +38,11 @@ def get_prompts(ds, tokenizer, prompt_templates):
             samples += [ds['text'][e]]
 
     for example in tqdm(samples, desc="Generating prompts"):
-        if args.only_subgoal:
-            subgoal_setting_prompt = prompt_templates['subgoal_setting'].format(response=example)
-            subgoal_setting_prompt = [{'role': 'user', 'content': subgoal_setting_prompt}]
-            prompts += [subgoal_setting_prompt]
-            continue
+        # if args.only_subgoal:
+        #     subgoal_setting_prompt = prompt_templates['subgoal_setting'].format(response=example)
+        #     subgoal_setting_prompt = [{'role': 'user', 'content': subgoal_setting_prompt}]
+        #     prompts += [subgoal_setting_prompt]
+        #     continue
         backtracking_prompt = prompt_templates['backtracking'].format(response=example)
         backtracking_prompt = [{'role': 'user', 'content': backtracking_prompt}]
         verification_prompt = prompt_templates['verification'].format(response=example)
@@ -69,7 +69,10 @@ def main(args):
     if args.dataset_name == 'open-web-math':
         ds = datasets.load_dataset('open-web-math/open-web-math', num_proc=os.cpu_count()-2, split=args.split)
     elif args.dataset_name == 'finemath':
-        ds = datasets.load_dataset('HuggingFaceTB/finemath', 'finemath-4plus', num_proc=os.cpu_count()-2, split=args.split)
+        ds = datasets.load_dataset(
+            'HuggingFaceTB/finemath', 'finemath-4plus', 
+            num_proc=os.cpu_count()-2, split=args.split
+        )
     else:
         raise ValueError(f'Unknown dataset: {args.dataset_name}')
 
@@ -80,17 +83,19 @@ def main(args):
         print('Subsampling the dataset with start={} and end={}'.format(args.start, args.end))
         ds = ds.select(range(args.start, args.end))
 
+    JUDGE, TP, NS, TAG = 'Qwen/Qwen2.5-32B-Instruct', 2, 128, "32b"
+    # JUDGE, TP, NS, TAG = 'Qwen/Qwen2.5-72B-Instruct', 4, 128, "v3"
     llm = LLM(
-        model='Qwen/Qwen2.5-32B-Instruct',
+        model=JUDGE,
         tokenizer_mode="auto",
-        max_num_seqs=32,
+        max_num_seqs=NS,
         enable_prefix_caching=True,
         trust_remote_code=True,
-        tensor_parallel_size=2,
+        tensor_parallel_size=TP,
         gpu_memory_utilization=0.95,
         max_model_len=4096,
     )
-    tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-32B-Instruct")
+    tokenizer = AutoTokenizer.from_pretrained(JUDGE)
 
     num_batches = math.ceil(len(ds) / args.save_every)
     batch_size = args.save_every
@@ -117,9 +122,9 @@ def main(args):
         
         for i, response in enumerate(responses):
             output = response.outputs[0].text.strip()
-            if args.only_subgoal:
-                outputs_dict['subgoal_setting_raw'][i] = output
-                continue
+            # if args.only_subgoal:
+            #     outputs_dict['subgoal_setting_raw'][i] = output
+            #     continue
             idx = i % 4
             batch_idx = i // 4
             if idx == 0:
@@ -142,11 +147,11 @@ def main(args):
         try:
             ds_so_far = datasets.concatenate_datasets(all_ds)
             if args.start >= 0 and args.end >= 0 and args.start < args.end:
-                suffix = f'_{args.start}_{args.end}'
+                suffix = f'_{TAG}_{args.start}_{args.end}'
             else:
-                suffix = ''
-            ds_out_name = f'{args.user}{args.dataset_name}_raw_v3{suffix}'
-            ds_so_far.push_to_hub(ds_out_name)
+                suffix = TAG
+            ds_out_name = f'{args.dataset_name}_raw_v3{suffix}'
+            ds_so_far.save_to_disk(ds_out_name)
         except Exception as e:
             print(f'Error saving dataset: {e}')
             continue
@@ -154,11 +159,13 @@ def main(args):
     try:
         ds_so_far = datasets.concatenate_datasets(all_ds)
         if args.start >= 0 and args.end >= 0 and args.start < args.end:
-            suffix = f'_{args.start}_{args.end}'
+            suffix = f'_{TAG}_{args.start}_{args.end}'
         else:
-            suffix = ''
-        ds_out_name = f'{args.user}{args.dataset_name}_raw_v3{suffix}'
-        ds_so_far.push_to_hub(ds_out_name)
+            suffix = TAG
+        # ds_out_name = f'{args.user}{args.dataset_name}_raw_v3{suffix}'
+        # ds_so_far.push_to_hub(ds_out_name)
+        ds_out_name = f'{args.dataset_name}_raw_v3{suffix}'
+        ds_so_far.save_to_disk(ds_out_name)
     except Exception as e:
         print(f'Final error saving dataset: {e}')
     print('Done')

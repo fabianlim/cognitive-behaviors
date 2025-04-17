@@ -7,7 +7,7 @@ args = parser.parse_args()
 
 dataset_name = args.dataset_name
 assert dataset_name is not None, "Dataset name is not set"
-ds = datasets.load_dataset(dataset_name, split='train')
+ds = datasets.load_from_disk(dataset_name)
 
 num_samples = len(ds)
 # get counts of backtrack, backchain, verification, subgoal
