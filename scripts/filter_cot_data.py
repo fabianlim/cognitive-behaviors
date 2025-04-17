@@ -16,6 +16,9 @@ parser.add_argument('--save_every', type=int, default=10000, help='Save every N 
 parser.add_argument('--dataset_name', type=str, default='open-web-math', help='Dataset to process')
 
 SCRIPT_DIR=os.path.dirname(os.path.realpath(__file__))
+CUR_DIR=os.getcwd()
+
+print ('curr directory', CUR_DIR)
 
 if __name__ == '__main__':
 
@@ -44,6 +47,7 @@ if __name__ == '__main__':
                 "--end", str(e),
                 "--dataset_name", args.dataset_name,
                 "--save_every", str(args.save_every),
+                "--output_dir", CUR_DIR,
             ],
             env={
                 **os.environ,

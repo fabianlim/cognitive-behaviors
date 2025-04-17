@@ -15,6 +15,7 @@ parser.add_argument('--max_examples', type=int, default=-1, help='Max examples t
 parser.add_argument('--save_every', type=int, default=10000, help='Save every N examples')
 parser.add_argument('--user', type=str, default='', help='User to push the dataset to')
 parser.add_argument('--dataset_name', type=str, default='open-web-math', help='Dataset to process')
+parser.add_argument('--output_dir', type=str, default='', help='where to put results')
 
 PROMPT_LOC_DICT = {
     'backtracking': './pretraining_analysis/prompts/backtracking_v0.txt',
@@ -150,7 +151,7 @@ def main(args):
                 suffix = f'_{TAG}_{args.start}_{args.end}'
             else:
                 suffix = TAG
-            ds_out_name = f'{args.dataset_name}_raw_v3{suffix}'
+            ds_out_name = f'{args.output_dir}/{args.dataset_name}_raw_v3{suffix}'
             ds_so_far.save_to_disk(ds_out_name)
         except Exception as e:
             print(f'Error saving dataset: {e}')
@@ -164,7 +165,7 @@ def main(args):
             suffix = TAG
         # ds_out_name = f'{args.user}{args.dataset_name}_raw_v3{suffix}'
         # ds_so_far.push_to_hub(ds_out_name)
-        ds_out_name = f'{args.dataset_name}_raw_v3{suffix}'
+        ds_out_name = f'{args.output_dir}/{args.dataset_name}_raw_v3{suffix}'
         ds_so_far.save_to_disk(ds_out_name)
     except Exception as e:
         print(f'Final error saving dataset: {e}')
