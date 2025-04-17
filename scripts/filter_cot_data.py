@@ -15,6 +15,8 @@ parser.add_argument('--tp_degree', type=int, default=2, help='tp_degree')
 parser.add_argument('--save_every', type=int, default=10000, help='Save every N examples')
 parser.add_argument('--dataset_name', type=str, default='open-web-math', help='Dataset to process')
 
+SCRIPT_DIR=os.path.dirname(os.path.realpath(__file__))
+
 if __name__ == '__main__':
 
     args = parser.parse_args()
@@ -52,6 +54,7 @@ if __name__ == '__main__':
                     )
                 ]),
             },
+            cwd=f'{SCRIPT_DIR}/..',
             stdout=out_file,
             stderr=out_file,
         ) 
